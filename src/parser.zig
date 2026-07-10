@@ -1,5 +1,7 @@
 const std = @import("std");
 const types = @import("types.zig");
+const extensions = @import("extensions.zig");
+const jutils = @import("json_utils.zig");
 const E = @import("error.zig");
 
 const Gltf = types.Gltf;
@@ -43,9 +45,7 @@ fn getReq(obj: anytype, key: []const u8) !JsonValue {
 }
 
 fn getOpt(obj: anytype, key: []const u8) ?JsonValue {
-    const v = obj.get(key) orelse return null;
-    if (v == .null) return null;
-    return v;
+    return jutils.getOpt(obj, key);
 }
 
 fn optString(obj: anytype, key: []const u8) ?[]const u8 {
@@ -54,36 +54,19 @@ fn optString(obj: anytype, key: []const u8) ?[]const u8 {
 }
 
 fn optF64(obj: anytype, key: []const u8) ?f64 {
-    const v = getOpt(obj, key) orelse return null;
-    return switch (v) {
-        .float => |f| f,
-        .integer => |ival| @floatFromInt(ival),
-        else => return null,
-    };
+    return jutils.optF64(obj, key);
 }
 
 fn optU32(obj: anytype, key: []const u8) ?u32 {
-    const v = getOpt(obj, key) orelse return null;
-    if (v == .integer) {
-        const i = v.integer;
-        if (i >= 0 and i <= std.math.maxInt(u32)) return @intCast(i);
-    }
-    return null;
+    return jutils.optU32(obj, key);
 }
 
 fn optU64(obj: anytype, key: []const u8) ?u64 {
-    const v = getOpt(obj, key) orelse return null;
-    if (v == .integer) {
-        const i = v.integer;
-        if (i >= 0) return @intCast(i);
-    }
-    return null;
+    return jutils.optU64(obj, key);
 }
 
 fn optBool(obj: anytype, key: []const u8) ?bool {
-    const v = getOpt(obj, key) orelse return null;
-    if (v == .bool) return v.bool;
-    return null;
+    return jutils.optBool(obj, key);
 }
 
 fn getF64(val: JsonValue) !f64 {
@@ -143,18 +126,7 @@ fn optStringArray(allocator: std.mem.Allocator, obj: anytype, key: []const u8) !
 }
 
 fn optF64Fixed(comptime N: usize, obj: anytype, key: []const u8) ?[N]f64 {
-    const v = getOpt(obj, key) orelse return null;
-    const items = v.array.items;
-    if (items.len != N) return null;
-    var result: [N]f64 = undefined;
-    for (items, 0..) |item, idx| {
-        result[idx] = switch (item) {
-            .float => |f| f,
-            .integer => |ival| @floatFromInt(ival),
-            else => return null,
-        };
-    }
-    return result;
+    return jutils.optF64Fixed(N, obj, key);
 }
 
 fn optExtras(obj: anytype, key: []const u8) ?JsonValue {
@@ -355,6 +327,13 @@ fn parseTextureInfo(allocator: std.mem.Allocator, val: JsonValue) !TextureInfo {
     return TextureInfo{
         .index = try getU32(try getReq(obj, "index")),
         .tex_coord = optU32(obj, "texCoord") orelse 0,
+        .texture_transform = if (getOpt(obj, "extensions")) |ext|
+            if (jutils.getOpt(ext.object, "KHR_texture_transform")) |tt|
+                extensions.parseTextureTransform(tt)
+            else
+                null
+        else
+            null,
         .extras = optExtras(obj, "extras"),
     };
 }
@@ -366,6 +345,13 @@ fn parseMaterialNormalTextureInfo(allocator: std.mem.Allocator, val: JsonValue) 
         .index = try getU32(try getReq(obj, "index")),
         .tex_coord = optU32(obj, "texCoord") orelse 0,
         .scale = optF64(obj, "scale") orelse 1.0,
+        .texture_transform = if (getOpt(obj, "extensions")) |ext|
+            if (jutils.getOpt(ext.object, "KHR_texture_transform")) |tt|
+                extensions.parseTextureTransform(tt)
+            else
+                null
+        else
+            null,
         .extras = optExtras(obj, "extras"),
     };
 }
@@ -377,6 +363,13 @@ fn parseMaterialOcclusionTextureInfo(allocator: std.mem.Allocator, val: JsonValu
         .index = try getU32(try getReq(obj, "index")),
         .tex_coord = optU32(obj, "texCoord") orelse 0,
         .strength = optF64(obj, "strength") orelse 1.0,
+        .texture_transform = if (getOpt(obj, "extensions")) |ext|
+            if (jutils.getOpt(ext.object, "KHR_texture_transform")) |tt|
+                extensions.parseTextureTransform(tt)
+            else
+                null
+        else
+            null,
         .extras = optExtras(obj, "extras"),
     };
 }

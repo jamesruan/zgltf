@@ -1,6 +1,5 @@
 const std = @import("std");
 const types = @import("types.zig");
-const extensions = @import("extensions.zig");
 const jutils = @import("json_utils.zig");
 const E = @import("error.zig");
 
@@ -327,14 +326,8 @@ fn parseTextureInfo(allocator: std.mem.Allocator, val: JsonValue) !TextureInfo {
     return TextureInfo{
         .index = try getU32(try getReq(obj, "index")),
         .tex_coord = optU32(obj, "texCoord") orelse 0,
-        .texture_transform = if (getOpt(obj, "extensions")) |ext|
-            if (jutils.getOpt(ext.object, "KHR_texture_transform")) |tt|
-                extensions.parseTextureTransform(tt)
-            else
-                null
-        else
-            null,
         .extras = optExtras(obj, "extras"),
+        .extensions = optExtras(obj, "extensions"),
     };
 }
 
@@ -345,13 +338,6 @@ fn parseMaterialNormalTextureInfo(allocator: std.mem.Allocator, val: JsonValue) 
         .index = try getU32(try getReq(obj, "index")),
         .tex_coord = optU32(obj, "texCoord") orelse 0,
         .scale = optF64(obj, "scale") orelse 1.0,
-        .texture_transform = if (getOpt(obj, "extensions")) |ext|
-            if (jutils.getOpt(ext.object, "KHR_texture_transform")) |tt|
-                extensions.parseTextureTransform(tt)
-            else
-                null
-        else
-            null,
         .extras = optExtras(obj, "extras"),
     };
 }
@@ -363,13 +349,6 @@ fn parseMaterialOcclusionTextureInfo(allocator: std.mem.Allocator, val: JsonValu
         .index = try getU32(try getReq(obj, "index")),
         .tex_coord = optU32(obj, "texCoord") orelse 0,
         .strength = optF64(obj, "strength") orelse 1.0,
-        .texture_transform = if (getOpt(obj, "extensions")) |ext|
-            if (jutils.getOpt(ext.object, "KHR_texture_transform")) |tt|
-                extensions.parseTextureTransform(tt)
-            else
-                null
-        else
-            null,
         .extras = optExtras(obj, "extras"),
     };
 }
@@ -596,6 +575,7 @@ pub fn parse(allocator: std.mem.Allocator, source: []const u8) !Gltf {
         .extensions = optExtras(obj, "extensions"),
         .extensions_required = try optStringArray(al, obj, "extensionsRequired"),
         .extensions_used = try optStringArray(al, obj, "extensionsUsed"),
+        .extras = optExtras(obj, "extras"),
         .images = if (getOpt(obj, "images")) |v| try parseArray(al, Image, v, parseImage) else null,
         .materials = if (getOpt(obj, "materials")) |v| try parseArray(al, Material, v, parseMaterial) else null,
         .meshes = if (getOpt(obj, "meshes")) |v| try parseArray(al, Mesh, v, parseMesh) else null,

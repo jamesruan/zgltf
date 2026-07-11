@@ -7,6 +7,13 @@ pub const TextureTransform = struct {
     rotation: f64 = 0.0,
     scale: [2]f64 = .{ 1.0, 1.0 },
     tex_coord: ?u32 = null,
+
+    pub fn fromExtensions(extensions_val: ?JsonValue) ?TextureTransform {
+        const exts = extensions_val orelse return null;
+        if (exts != .object) return null;
+        const khr = exts.object.get("KHR_texture_transform") orelse return null;
+        return parseTextureTransform(khr);
+    }
 };
 
 pub fn parseTextureTransform(val: JsonValue) TextureTransform {

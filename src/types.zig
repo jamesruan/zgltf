@@ -1,5 +1,4 @@
 const std = @import("std");
-const extensions = @import("extensions.zig");
 
 pub const Extras = std.json.Value;
 
@@ -147,15 +146,14 @@ pub const Image = struct {
 pub const TextureInfo = struct {
     index: u32,
     tex_coord: u32 = 0,
-    texture_transform: ?extensions.TextureTransform = null,
     extras: ?Extras = null,
+    extensions: ?Extras = null,
 };
 
 pub const MaterialNormalTextureInfo = struct {
     index: u32,
     tex_coord: u32 = 0,
     scale: f64 = 1.0,
-    texture_transform: ?extensions.TextureTransform = null,
     extras: ?Extras = null,
 };
 
@@ -163,7 +161,6 @@ pub const MaterialOcclusionTextureInfo = struct {
     index: u32,
     tex_coord: u32 = 0,
     strength: f64 = 1.0,
-    texture_transform: ?extensions.TextureTransform = null,
     extras: ?Extras = null,
 };
 
@@ -289,6 +286,7 @@ pub const Gltf = struct {
     extensions: ?Extras = null,
     extensions_required: ?[][]const u8 = null,
     extensions_used: ?[][]const u8 = null,
+    extras: ?Extras = null,
     images: ?[]Image = null,
     materials: ?[]Material = null,
     meshes: ?[]Mesh = null,
